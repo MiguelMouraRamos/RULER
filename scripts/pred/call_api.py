@@ -91,7 +91,7 @@ parser.add_argument("--batch_size", type=int, default=1)
 
 args = parser.parse_args()
 args.stop_words = list(filter(None, args.stop_words.split(',')))
-if args.server_type == 'hf' or args.server_type == 'gemini':
+if args.server_type == 'hf' or args.server_type == 'gemini' or args.server_type == 'vllm':
     args.threads = 1
 
 
@@ -113,18 +113,20 @@ def get_llm(tokens_to_generate):
         )
 
     elif args.server_type == 'vllm':
-        from client_wrappers import VLLMClient
-        llm = VLLMClient(
-            server_host=args.server_host,
-            server_port=args.server_port,
-            ssh_server=args.ssh_server,
-            ssh_key_path=args.ssh_key_path,
+        #from client_wrappers import VLLMClient
+        from model_wrappers import VLLMModel
+        llm = VLLMModel(
+            #server_host=args.server_host,
+            #server_port=args.server_port,
+            #ssh_server=args.ssh_server,
+            #ssh_key_path=args.ssh_key_path,
+            name_or_path=args.model_name_or_path,
             temperature=args.temperature,
             top_k=args.top_k,
             top_p=args.top_p,
-            random_seed=args.random_seed,
+            seed=args.random_seed,
             stop=args.stop_words,
-            tokens_to_generate=tokens_to_generate,
+            max_tokens=tokens_to_generate,
         )
 
     elif args.server_type == 'sglang':

@@ -17,6 +17,38 @@ import logging
 import requests
 import torch
 from typing import Dict, List, Optional
+from vllm import LLM, SamplingParams
+
+
+class VLLMModel:
+    def __init__(self, name_or_path: str, **generation_kwargs) -> None:
+        self.llm = LLM(
+            model=name_or_path,
+            trust_remote_code=True,
+            tensor_parallel_size=torch.cuda.device_count(),
+            dtype="bfloat16"
+        )
+        self.generation_kwargs = generation_kwargs
+
+    def __call__(self, prompt: str, **kwargs) -> dict:
+        return self.process_batch([prompt], **kwargs)[0]
+
+    def process_batch(self, prompts: List[str], **kwargs) -> List[dict]:
+
+        sampling_params = SamplingParams(**{**self.generation_kwargs, **kwargs})
+
+        outputs = self.llm.generate(prompts, sampling_params)
+
+        results = []
+        for output, prompt in zip(outputs, prompts):
+            text = output.outputs[0].text
+
+            if text.startswith(prompt):
+                text = text[len(prompt):]
+
+            results.append({'text': [text]})
+
+        return results
 
 
 class HuggingFaceModel:
