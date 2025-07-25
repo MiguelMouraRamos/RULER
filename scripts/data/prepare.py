@@ -38,6 +38,7 @@ import time
 import yaml
 from pathlib import Path
 from template import Templates
+from transformers import AutoTokenizer
 import nltk
 try:
     nltk.data.find('tokenizers/punkt')
@@ -84,8 +85,22 @@ def main():
     config.update(tasks_base[config['task']])
 
     # Add templates
-    assert args.model_template_type in Templates, print(f'{args.model_template_type} is not found in {Templates.keys()}')
-    model_template = Templates[args.model_template_type]
+    if args.model_template_type == 'auto':
+        tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_path)
+        try:
+            model_template = tokenizer.apply_chat_template(
+                [{"role": "user", "content": "{task_template}"}],
+                tokenize=False,
+                add_generation_prompt=True
+            )
+        except (AttributeError, ValueError) as e:
+            raise RuntimeError(
+                f"Tokenizer at '{args.tokenizer_path}' does not support chat templates. "
+                f"Please provide a valid tokenizer with a chat template defined.\nDetails: {e}"
+            )
+    else:
+        assert args.model_template_type in Templates, print(f'{args.model_template_type} is not found in {Templates.keys()}')
+        model_template = Templates[args.model_template_type]
 
     if args.prepare_for_ns:  
         from tokenizer import select_tokenizer
