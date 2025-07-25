@@ -80,6 +80,7 @@ parser.add_argument("--model_name_or_path", type=str, default='gpt-3.5-turbo',
                     help='supported models from OpenAI or HF (provide a key or a local path to the checkpoint)')
 
 # Inference
+parser.add_argument("--tokens_to_generate", type=int, default=None, help='')
 parser.add_argument("--temperature", type=float, default=1.0)
 parser.add_argument("--top_k", type=int, default=32)
 parser.add_argument("--top_p", type=float, default=1.0)
@@ -240,7 +241,8 @@ def main():
         data = read_manifest(task_file)
 
     # Load api
-    llm = get_llm(config['tokens_to_generate'])
+    tokens_to_generate = config['tokens_to_generate'] if args.tokens_to_generate is None else args.tokens_to_generate
+    llm = get_llm(tokens_to_generate)
 
     def get_output(idx_list, index_list, input_list, outputs_list, others_list, truncation_list, length_list):
         nonlocal llm
